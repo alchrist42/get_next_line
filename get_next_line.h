@@ -1,11 +1,18 @@
 #ifndef GET_NEXT_LINE_H
 # define GET_NEXT_LINE_H
 
+
+# define CONTENT_MIN_SIZE 1024
+# define BUFFER_SIZE 8 //todo del
+
+
 # include <stdlib.h>
+# include <unistd.h>
 # include <stdbool.h>
 
-CONTENT_MIN_SIZE = 4096;
-BUFFER_SIZE = 512; //todo del
+
+#include <fcntl.h> //todo del
+#include <stdio.h> //todo del
 
 typedef struct s_list
 {
@@ -20,8 +27,12 @@ typedef struct s_list
 }					t_list;
 
 int		get_next_line(int fd, char **line);
+
 t_list	*ft_lstnew(int fd);
 void	ft_lstadd_front(t_list **lst, t_list *new);
 t_list	*ft_lstfind(t_list *begin_list, int fd);
+
+size_t	ft_strlcpy(char *dst, const char *src, size_t dstsize);
+char	*ft_strncpy(char *dest, char *src, size_t n);
 
 #endif
