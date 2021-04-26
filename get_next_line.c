@@ -1,6 +1,5 @@
 #include "get_next_line.h"
 
-
 /*
 **	@brief	finds or create new list for specific file descriptor
 **	
@@ -8,7 +7,6 @@
 **	@param	fd			file descriptor
 **	@return	t_list*		pointer to list
 */
-
 t_list	*ft_find_or_create_elem(t_list **begin, int fd)
 {
 	t_list	*current;
@@ -23,110 +21,119 @@ t_list	*ft_find_or_create_elem(t_list **begin, int fd)
 	return (current);
 }
 
-
-
-int	ft_create_line(t_list **begin_flow, char **line)
+/*
+**	@brief	copy source string to dest string, not more than dstsize - 1.
+**			than null terminate dest.
+**	
+**	@param	dst		pointer to string
+**	@param	src		pointer to string
+**	@param	dstsize		count bytes to copy + 1 for null terminate
+**	@return	size_t	lenght src string
+*/
+size_t	ft_strlcpy(char *dst, const char *src, size_t dstsize)
 {
-	t_list	*flow;
-	char	*temp;
-	size_t	copied;
-	char 	*dst;
+	size_t	i;
 
-	// printf("len = %zu\n", (*begin_flow)->lenght);
-	*line = malloc(sizeof(**line) * ((*begin_flow)->lenght + 1)); //lenght == 0 in last?
-	if (!*line)
-		return (-1); // need add clear lst - 1
-	flow = *begin_flow;
-	// printf("Start copy string (%zu)\n", (*begin_flow)->lenght);
-	dst = *line;
-	while (flow) // копируем данные с буфферов
+	i = 0;
+	while (src[i])
 	{
-		// printf(" end = %zu, start = %zu, len = %zu, content = |%s|\n", flow->end_pos, flow->start_pos, flow->lenght, flow->content + flow->start_pos);
-		copied = ft_strlcpy(dst, flow->content + flow->start_pos, flow->end_pos - flow->start_pos + 1);
-		// printf("line copied: %s\n", *line);
-		dst += copied;
-		if (flow->flow)
-			flow = flow->flow;
-		else
-			break;
+		if (dst && i + 1 < dstsize)
+			dst[i] = src[i];
+		i++;
 	}
-	(*begin_flow)->start_pos = flow->start_pos + copied + 1;
-	// printf("Complete string: |%s|\n", *line);
-	
-	if (*begin_flow != flow) // swap content between first and last. 
+	if (dstsize && dst)
 	{
-		// printf("Start swap last <-> first\n");
-		(*begin_flow)->end_pos = flow->end_pos;
+		if (dstsize - 1 < i)
+			dst[dstsize - 1] = 0;
+		else
+			dst[i] = 0;
+	}
+	return (i);
+}
+
+/*
+**	@brief	contactenates the string from lists content
+**	
+**	@param	begin_flow		address the pointer to begin list
+**	@param	flow		pointer to begin list
+**	@param	line		address the pointer to string
+**	@return	int	1 if create the string succes, else -1
+*/
+int	ft_create_line(t_list **begin_flow, t_list *flow, char **line)
+{
+	char	*temp;
+	char	*dst;
+
+	*line = malloc(sizeof(**line) * ((*begin_flow)->lenght + 1));
+	if (!*line)
+		return (ft_lstclear(&(*begin_flow)->flow) - 1);
+	dst = *line;
+	while (flow->flow)
+	{
+		dst += ft_strlcpy(dst, flow->content + flow->start,
+				flow->end - flow->start + 1);
+		flow = flow->flow;
+	}
+	(*begin_flow)->start = flow->start + 1 + ft_strlcpy(dst,
+			flow->content + flow->start, flow->end - flow->start + 1);
+	(*begin_flow)->end = flow->end;
+	(*begin_flow)->lenght = 0;
+	if (*begin_flow != flow)
+	{
 		temp = (*begin_flow)->content;
 		(*begin_flow)->content = flow->content;
 		flow->content = temp;
 	}
-	(*begin_flow)->lenght = 0;
-	
-	ft_lstclear(&(*begin_flow)->flow);
-	// if ((*begin_flow)->flow)
-	// {
-	// 	printf("----> FUCK! <----\n");
-	// 	return (-1);
-	// }
-	// (*begin_flow)->flow = NULL;	//зануляем поддерево. поидее это сделает фри
-
-	return (1);
+	return (ft_lstclear(&(*begin_flow)->flow) + 1);
 }
 
+/*
+**	@brief	finds first occurense '\n' in list
+**	
+**	@param	begin_flow		address the pointer to begin list
+**	@param	flow		address the pointer to begin list
+**	@param	lenght		address the pointer to current list
+**	@param	line		address the pointer to string
+**	@return	int	1 if new line found and created new string,
+**				0 if new line not found,
+**				-1 of allocation memory error
+*/
 int	ft_check_buf(t_list **begin_flow, t_list **flow, int lenght, char **line)
 {
-	size_t	i;
-
-	// printf("Checker (%p, len = %i):\n start = %zu\n end = %zu\n all_cont = |", *flow, lenght, (*flow)->start_pos, (*flow)->end_pos);
-	// 
-	// for (size_t j = 0; j < (*flow)->buffer_size; j++)
-		// printf("%c", (*flow)->content[j]);
-	// printf("|\n\n");
-
-	// if (lenght == 0 && (*flow)->start_pos < (*flow)->end_pos) // reach end of file
-	// {
-	// 	printf("FILE END\n");
-	// 	return (ft_create_line(begin_flow, line));
-
-	// }
-
 	if (lenght > 0)
-		(*flow)->end_pos += lenght;
-
-	i = 0;
-	while ((*flow)->start_pos + (*flow)->lenght < (*flow)->end_pos)
+		(*flow)->end += lenght;
+	while ((*flow)->start + (*flow)->lenght < (*flow)->end)
 	{
-		// printf("i = %zu, char(%c), len(%zu)\n", (*flow)->lenght, (*flow)->content[(*flow)->start_pos + (*flow)->lenght], (*begin_flow)->lenght);
-		if ((*flow)->content[(*flow)->start_pos + (*flow)->lenght] == '\n')
+		if ((*flow)->content[(*flow)->start + (*flow)->lenght] == '\n')
 		{
-			// printf("")
-			(*flow)->content[(*flow)->start_pos + (*flow)->lenght] = 0;
-			return (ft_create_line(begin_flow, line));
+			(*flow)->content[(*flow)->start + (*flow)->lenght] = 0;
+			return (ft_create_line(begin_flow, *begin_flow, line));
 		}
 		(*flow)->lenght++;
 		(*begin_flow)->lenght += (*begin_flow != *flow);
 	}
-	// printf("end (*flow)->lenght = %zu\n", (*flow)->lenght);
-	if ((*flow)->buffer_size - (*flow)->end_pos < BUFFER_SIZE) // место в текущем листе закончилось
+	if ((*flow)->buffer_size - (*flow)->end < BUFFER_SIZE)
 	{
-		// printf("(buf:%zu end:%zu   Created new structure %p -> ",(*flow)->buffer_size, (*flow)->end_pos, *flow);
 		(*flow)->flow = ft_lstnew((*flow)->fd);
 		*flow = (*flow)->flow;
-		// printf("%p\n", *flow);
 	}
-
-
-	return 0;
+	return (0);
 }
 
-
-
-int get_next_line(int fd, char **line)
+/*
+**	@brief	Get the next line from file by file descriptor
+**	
+**	@param	fd		file descriptor
+**	@param	line	address to pointer string
+**	@return	int		1 if file read and string found,
+**					0 if file ended,
+**					-1 if any error.
+*/
+int	get_next_line(int fd, char **line)
 {
 	static t_list	*begin_fds;
 	t_list			*begin_flow;
-	t_list 			*flow;
+	t_list			*flow;
 	int				readen;
 
 	if (fd < 0 || BUFFER_SIZE < 1)
@@ -138,39 +145,13 @@ int get_next_line(int fd, char **line)
 	readen = -1;
 	while (true)
 	{
-		readen = ft_check_buf(&begin_flow, &flow, readen, line);; // чекаем буффер на переносы строк.. добавляем лист при необходимости
-		
+		readen = ft_check_buf(&begin_flow, &flow, readen, line);
 		if (readen == -1 || readen == 1)
 			return (readen);
-		
-		readen = (read(fd, flow->content + flow->end_pos, BUFFER_SIZE)); // read to buffer
-		if (readen < 0)
-			return (ft_lst_delflow(&begin_fds, begin_flow) - 1);
-		if (readen == 0)
-		{	
-			if (flow != begin_flow || flow->start_pos <= flow->end_pos)
-				ft_create_line(&begin_flow, line);
-			return (ft_lst_delflow(&begin_fds, begin_flow));
-		}
+		readen = (read(fd, flow->content + flow->end, BUFFER_SIZE));
+		if (!readen && (flow != begin_flow || flow->start <= flow->end))
+			ft_create_line(&begin_flow, begin_flow, line);
+		if (!readen || readen < 0)
+			return (ft_lst_delflow(&begin_fds, begin_flow) + readen);
 	}
 }
-
-// int main()
-// {
-// 	int result = 1;
-// 	char *s;
-
-// 	// int fd = open("42TESTERS-GNL/files/empty_lines", O_RDONLY);
-// 	// int fd = open("gnlTester/files/41_no_nl", O_RDONLY);
-// 	int fd = open("test.txt", O_RDONLY);
-
-// 	for (int i = 0; i < 10 && result > 0; i++)
-// 	{
-// 		result = get_next_line(fd, &s);
-// 		printf("\n%i: (%d)|%s|\n", i, result, s);
-// 		free(s);
-// 	}
-// 	close(fd);
-// 	// sleep (10);
-
-// }
