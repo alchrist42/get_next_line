@@ -25,17 +25,18 @@ int	ft_create_line(t_list **begin_flow, char **line)
 	size_t	copied;
 	char 	*dst;
 
-	*line = malloc(sizeof(**line) * (*begin_flow)->lenght);
+	// printf("len = %zu\n", (*begin_flow)->lenght);
+	*line = malloc(sizeof(**line) * ((*begin_flow)->lenght + 1)); //lenght == 0 in last?
 	if (!*line)
-		return (-1);
+		return (-1); // need add clear lst - 1
 	flow = *begin_flow;
 	// printf("Start copy string (%zu)\n", (*begin_flow)->lenght);
 	dst = *line;
-	while (true) // копируем данные с буфферов
+	while (flow) // копируем данные с буфферов
 	{
-		// printf(" end = %zu, start = %zu, content = |%s|\n", flow->end_pos, flow->start_pos, flow->content + flow->start_pos);
+		// printf(" end = %zu, start = %zu, len = %zu, content = |%s|\n", flow->end_pos, flow->start_pos, flow->lenght, flow->content + flow->start_pos);
 		copied = ft_strlcpy(dst, flow->content + flow->start_pos, flow->end_pos - flow->start_pos + 1);
-		// printf(" copied: %zu\n", copied);
+		// printf("line copied: %s\n", *line);
 		dst += copied;
 		if (flow->flow)
 			flow = flow->flow;
@@ -56,11 +57,11 @@ int	ft_create_line(t_list **begin_flow, char **line)
 	(*begin_flow)->lenght = 0;
 	
 	ft_lstclear(&(*begin_flow)->flow);
-	if ((*begin_flow)->flow)
-	{
-		printf("----> FUCK! <----\n");
-		return (-1);
-	}
+	// if ((*begin_flow)->flow)
+	// {
+	// 	printf("----> FUCK! <----\n");
+	// 	return (-1);
+	// }
 	// (*begin_flow)->flow = NULL;	//зануляем поддерево. поидее это сделает фри
 
 	return (1);
@@ -71,9 +72,9 @@ int	ft_check_buf(t_list **begin_flow, t_list **flow, int lenght, char **line)
 	size_t	i;
 
 	// printf("Checker (%p, len = %i):\n start = %zu\n end = %zu\n all_cont = |", *flow, lenght, (*flow)->start_pos, (*flow)->end_pos);
-	
+	// 
 	// for (size_t j = 0; j < (*flow)->buffer_size; j++)
-	// 	printf("%c", (*flow)->content[j]);
+		// printf("%c", (*flow)->content[j]);
 	// printf("|\n\n");
 
 	// if (lenght == 0 && (*flow)->start_pos < (*flow)->end_pos) // reach end of file
@@ -84,20 +85,22 @@ int	ft_check_buf(t_list **begin_flow, t_list **flow, int lenght, char **line)
 	// }
 
 	if (lenght > 0)
-		(*flow)->end_pos = (*flow)->end_pos + lenght;
+		(*flow)->end_pos += lenght;
 
 	i = 0;
-	while ((*flow)->start_pos + i < (*flow)->end_pos)
+	while ((*flow)->start_pos + (*flow)->lenght < (*flow)->end_pos)
 	{
-		(*begin_flow)->lenght++;
-		if ((*flow)->content[(*flow)->start_pos + i] == '\n')
+		// printf("i = %zu, char(%c), len(%zu)\n", (*flow)->lenght, (*flow)->content[(*flow)->start_pos + (*flow)->lenght], (*begin_flow)->lenght);
+		if ((*flow)->content[(*flow)->start_pos + (*flow)->lenght] == '\n')
 		{
-			(*flow)->content[(*flow)->start_pos + i] = 0;
-			// (*flow)->start_pos += i + 1;
+			// printf("")
+			(*flow)->content[(*flow)->start_pos + (*flow)->lenght] = 0;
 			return (ft_create_line(begin_flow, line));
 		}
-		i++;
+		(*flow)->lenght++;
+		(*begin_flow)->lenght += (*begin_flow != *flow);
 	}
+	// printf("end (*flow)->lenght = %zu\n", (*flow)->lenght);
 	if ((*flow)->buffer_size - (*flow)->end_pos < BUFFER_SIZE) // место в текущем листе закончилось
 	{
 		// printf("(buf:%zu end:%zu   Created new structure %p -> ",(*flow)->buffer_size, (*flow)->end_pos, *flow);
@@ -125,14 +128,7 @@ int get_next_line(int fd, char **line)
 	flow = begin_flow;
 	if (!begin_fds || !flow)
 		return (-1);
-	
-	
-
-	// printf(" Structure created.\n");
 	readen = -1;
-	// if (!readen)
-	// 	return (0);
-	// printf(" first check\n");
 	while (true)
 	{
 		readen = ft_check_buf(&begin_flow, &flow, readen, line);; // чекаем буффер на переносы строк.. добавляем лист при необходимости
@@ -142,20 +138,12 @@ int get_next_line(int fd, char **line)
 		
 		readen = (read(fd, flow->content + flow->end_pos, BUFFER_SIZE)); // read to buffer
 		if (readen < 0)
-		{	
-			// ft_lstdelone(&begin, flow_lst);
-			return (-1);
-		}
+			return (ft_lst_delflow(&begin_fds, begin_flow) - 1);
 		if (readen == 0)
 		{	
-			if (flow != begin_flow || (flow->end_pos && flow->start_pos <= flow->end_pos))
-				return (ft_create_line(&begin_flow, line));
-			else // EOF
-			{
-				// find && del one from 
-				return (0);
-
-			}
+			if (flow != begin_flow || flow->start_pos <= flow->end_pos)
+				ft_create_line(&begin_flow, line);
+			return (ft_lst_delflow(&begin_fds, begin_flow));
 		}
 	}
 }
@@ -165,14 +153,17 @@ int get_next_line(int fd, char **line)
 // 	int result = 1;
 // 	char *s;
 
-// 	// int fd = open("42TESTERS-GNL/files/alphabet", O_RDONLY);
+// 	// int fd = open("42TESTERS-GNL/files/empty_lines", O_RDONLY);
+// 	// int fd = open("gnlTester/files/41_no_nl", O_RDONLY);
 // 	int fd = open("test.txt", O_RDONLY);
 
-// 	for (int i = 0; i < 70 && result > 0; i++)
+// 	for (int i = 0; i < 10 && result > 0; i++)
 // 	{
 // 		result = get_next_line(fd, &s);
-// 		printf("\n------ %i -------\n %d: |%s|\n----------------\n\n", i, result, s);
+// 		printf("\n%i: (%d)|%s|\n", i, result, s);
+// 		free(s);
 // 	}
-		
 // 	close(fd);
+// 	// sleep (10);
+
 // }

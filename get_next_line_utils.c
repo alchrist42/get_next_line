@@ -23,6 +23,7 @@ t_list	*ft_lstnew(int fd)
 			free(elem);
 			return (NULL);
 		}
+		// printf("\ncreate %p : %p\n", elem, elem->content);
 		elem->content[elem->buffer_size] = 0;
 	}
 	return (elem);
@@ -51,7 +52,8 @@ void	ft_lstclear(t_list **lst) //, void (*del)(void *))
 
 	while (*lst)
 	{
-		next = (*lst)->next;
+		// printf("\ndel %p : %p\n", *lst, (*lst)->content);
+		next = (*lst)->flow;
 		free((*lst)->content);
 		free(*lst);
 		*lst = next;
@@ -102,19 +104,4 @@ size_t	ft_strlcpy(char *dst, const char *src, size_t dstsize)
 			dst[i] = 0;
 	}
 	return (i);
-}
-	
-char	*ft_strncpy(char *dest, char *src, size_t n)
-{
-	unsigned int	i;
-
-	i = 0;
-	while (src[i] && i < n)
-	{
-		dest[i] = src[i];
-		i++;
-	}
-	while (i < n)
-		dest[i++] = '\0';
-	return (dest);
 }
