@@ -2,7 +2,7 @@
 # define GET_NEXT_LINE_H
 
 
-# define CONTENT_MIN_SIZE 1024
+# define CONTENT_MIN_SIZE 4096
 // # define BUFFER_SIZE 8 //todo del
 
 
@@ -32,6 +32,7 @@ t_list	*ft_lstnew(int fd);
 void	ft_lstadd_front(t_list **lst, t_list *new);
 t_list	*ft_lstfind(t_list *begin_list, int fd);
 void	ft_lstclear(t_list **lst); //, void (*del)(void *));
+int		ft_lst_delflow(t_list **begin, t_list *begin_flow);
 
 size_t	ft_strlcpy(char *dst, const char *src, size_t dstsize);
 

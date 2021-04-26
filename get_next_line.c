@@ -142,37 +142,29 @@ int get_next_line(int fd, char **line)
 		
 		readen = (read(fd, flow->content + flow->end_pos, BUFFER_SIZE)); // read to buffer
 		if (readen < 0)
-		{	
-			// ft_lstdelone(&begin, flow_lst);
-			return (-1);
-		}
+			return (ft_lst_delflow(&begin_fds, begin_flow) - 1);
 		if (readen == 0)
 		{	
 			if (flow != begin_flow || (flow->end_pos && flow->start_pos <= flow->end_pos))
-				return (ft_create_line(&begin_flow, line));
-			else // EOF
-			{
-				// find && del one from 
-				return (0);
-
-			}
+				readen = (ft_create_line(&begin_flow, line) - 1);
+			return (ft_lst_delflow(&begin_fds, begin_flow));
 		}
 	}
 }
 
-// int main()
-// {
-// 	int result = 1;
-// 	char *s;
+int main()
+{
+	int result = 1;
+	char *s;
 
-// 	// int fd = open("42TESTERS-GNL/files/alphabet", O_RDONLY);
-// 	int fd = open("test.txt", O_RDONLY);
+	// int fd = open("42TESTERS-GNL/files/alphabet", O_RDONLY);
+	int fd = open("test.txt", O_RDONLY);
 
-// 	for (int i = 0; i < 70 && result > 0; i++)
-// 	{
-// 		result = get_next_line(fd, &s);
-// 		printf("\n------ %i -------\n %d: |%s|\n----------------\n\n", i, result, s);
-// 	}
-		
-// 	close(fd);
-// }
+	for (int i = 0; i < 70 && result > 0; i++)
+	{
+		result = get_next_line(fd, &s);
+		printf("\n------ %i -------\n %d: |%s|\n----------------\n\n", i, result, s);
+		free(s);
+	}
+	close(fd);
+}

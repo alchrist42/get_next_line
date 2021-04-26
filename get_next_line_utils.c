@@ -58,12 +58,30 @@ void	ft_lstclear(t_list **lst) //, void (*del)(void *))
 	}
 }
 
-// void	ft_lst_delone(t_list **begin, t_list *for_del)
-// {
-// 	t_list	*previous;
-// 	t_list	*current;
+int	ft_lst_delflow(t_list **begin, t_list *begin_flow)
+{
+	t_list	*previous;
+	t_list	*current;
 
-// }
+	previous = NULL;
+	current = *begin;
+	while (current)
+	{
+		if (current == begin_flow)
+		{
+			if (previous)
+				previous->next = current->next;
+			else
+				*begin = current->next;
+			ft_lstclear(&current);
+			// printf("\tCLEARED! \n");
+			return (0);
+		}
+		previous = current;
+		current = current->next;
+	}
+	return (-1);
+}
 
 size_t	ft_strlcpy(char *dst, const char *src, size_t dstsize)
 {
